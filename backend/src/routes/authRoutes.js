@@ -19,23 +19,23 @@ router.post(
     body('email').isEmail().withMessage('E-mail inválido.'),
     body('password').isLength({ min: 6 }).withMessage('Senha deve ter pelo menos 6 caracteres.'),
   ],
-  (req, res) => {
+  async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendError(res, 400, 'Dados inválidos.', errors.array());
     }
 
     const { name, email, password } = req.body;
-    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email.toLowerCase());
+    const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(email.toLowerCase());
     if (existing) {
       return sendError(res, 409, 'E-mail já cadastrado.');
     }
 
     const passwordHash = bcrypt.hashSync(password, 10);
-    const result = db.prepare('INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)').run(name.trim(), email.toLowerCase(), passwordHash);
-    const user = db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(result.lastInsertRowid);
+    const result = await db.prepare('INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)').run(name.trim(), email.toLowerCase(), passwordHash);
+    const user = await db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(result.lastInsertRowid);
 
-    ensureUserDefaultCategories(user.id);
+    await ensureUserDefaultCategories(user.id);
 
     const token = generateToken(user);
     return sendSuccess(res, 201, { user, token }, 'Usuário criado com sucesso.');
@@ -48,14 +48,14 @@ router.post(
     body('email').isEmail().withMessage('E-mail inválido.'),
     body('password').notEmpty().withMessage('Senha obrigatória.'),
   ],
-  (req, res) => {
+  async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendError(res, 400, 'Dados inválidos.', errors.array());
     }
 
     const { email, password } = req.body;
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase());
+    const user = await db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase());
 
     if (!user || !bcrypt.compareSync(password, user.password_hash)) {
       return sendError(res, 401, 'Credenciais inválidas.');

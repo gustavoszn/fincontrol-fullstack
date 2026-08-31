@@ -7,7 +7,7 @@ const { sendSuccess, sendError } = require('../utils/response');
 const router = express.Router();
 router.use(authMiddleware);
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { type, categoryId, search, startDate, endDate, minAmount, maxAmount } = req.query;
 
   let query = 'SELECT t.*, c.name as category_name FROM transactions t LEFT JOIN categories c ON c.id = t.category_id WHERE t.user_id = ?';
@@ -51,7 +51,7 @@ router.get('/', (req, res) => {
 
   query += ' ORDER BY t.date DESC, t.created_at DESC';
 
-  const transactions = db.prepare(query).all(...params);
+  const transactions = await db.prepare(query).all(...params);
   return sendSuccess(res, 200, transactions);
 });
 
@@ -63,24 +63,24 @@ router.post(
     body('type').isIn(['income', 'expense']).withMessage('Tipo inválido.'),
     body('date').isISO8601().withMessage('Data inválida.'),
   ],
-  (req, res) => {
+  async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendError(res, 400, 'Dados inválidos.', errors.array());
     }
 
     const { description, amount, type, categoryId, date, notes } = req.body;
-    const category = categoryId ? db.prepare('SELECT id FROM categories WHERE id = ? AND user_id = ?').get(categoryId, req.user.id) : null;
+    const category = categoryId ? await db.prepare('SELECT id FROM categories WHERE id = ? AND user_id = ?').get(categoryId, req.user.id) : null;
 
     if (categoryId && !category) {
       return sendError(res, 400, 'Categoria não encontrada para este usuário.');
     }
 
-    const result = db.prepare(
+    const result = await db.prepare(
       `INSERT INTO transactions (user_id, category_id, description, amount, type, date, notes) VALUES (?, ?, ?, ?, ?, ?, ?)`
     ).run(req.user.id, categoryId || null, description.trim(), Number(amount), type, date, notes ? notes.trim() : null);
 
-    const transaction = db.prepare('SELECT t.*, c.name as category_name FROM transactions t LEFT JOIN categories c ON c.id = t.category_id WHERE t.id = ?').get(result.lastInsertRowid);
+    const transaction = await db.prepare('SELECT t.*, c.name as category_name FROM transactions t LEFT JOIN categories c ON c.id = t.category_id WHERE t.id = ?').get(result.lastInsertRowid);
     return sendSuccess(res, 201, transaction, 'Transação criada com sucesso.');
   }
 );
@@ -93,41 +93,41 @@ router.put(
     body('type').isIn(['income', 'expense']).withMessage('Tipo inválido.'),
     body('date').isISO8601().withMessage('Data inválida.'),
   ],
-  (req, res) => {
+  async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendError(res, 400, 'Dados inválidos.', errors.array());
     }
 
-    const transaction = db.prepare('SELECT * FROM transactions WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+    const transaction = await db.prepare('SELECT * FROM transactions WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
     if (!transaction) {
       return sendError(res, 404, 'Transação não encontrada.');
     }
 
     const { description, amount, type, categoryId, date, notes } = req.body;
-    const category = categoryId ? db.prepare('SELECT id FROM categories WHERE id = ? AND user_id = ?').get(categoryId, req.user.id) : null;
+    const category = categoryId ? await db.prepare('SELECT id FROM categories WHERE id = ? AND user_id = ?').get(categoryId, req.user.id) : null;
 
     if (categoryId && !category) {
       return sendError(res, 400, 'Categoria não encontrada para este usuário.');
     }
 
-    db.prepare(
+    await db.prepare(
       `UPDATE transactions SET category_id = ?, description = ?, amount = ?, type = ?, date = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?`
     ).run(categoryId || null, description.trim(), Number(amount), type, date, notes ? notes.trim() : null, req.params.id, req.user.id);
 
-    const updated = db.prepare('SELECT t.*, c.name as category_name FROM transactions t LEFT JOIN categories c ON c.id = t.category_id WHERE t.id = ?').get(req.params.id);
+    const updated = await db.prepare('SELECT t.*, c.name as category_name FROM transactions t LEFT JOIN categories c ON c.id = t.category_id WHERE t.id = ?').get(req.params.id);
     return sendSuccess(res, 200, updated, 'Transação atualizada com sucesso.');
   }
 );
 
-router.delete('/:id', (req, res) => {
-  const transaction = db.prepare('SELECT * FROM transactions WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+router.delete('/:id', async (req, res) => {
+  const transaction = await db.prepare('SELECT * FROM transactions WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
 
   if (!transaction) {
     return sendError(res, 404, 'Transação não encontrada.');
   }
 
-  db.prepare('DELETE FROM transactions WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
+  await db.prepare('DELETE FROM transactions WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
   return sendSuccess(res, 200, { id: Number(req.params.id) }, 'Transação excluída com sucesso.');
 });
 

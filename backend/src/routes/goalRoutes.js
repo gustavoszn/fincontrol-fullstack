@@ -7,8 +7,8 @@ const { sendSuccess, sendError } = require('../utils/response');
 const router = express.Router();
 router.use(authMiddleware);
 
-router.get('/', (req, res) => {
-  const goals = db.prepare('SELECT * FROM goals WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
+router.get('/', async (req, res) => {
+  const goals = await db.prepare('SELECT * FROM goals WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
   return sendSuccess(res, 200, goals.map((goal) => ({
     ...goal,
     progress: goal.target_amount > 0 ? Math.min((goal.current_amount / goal.target_amount) * 100, 100) : 0,
@@ -23,18 +23,18 @@ router.post(
     body('currentAmount').isFloat({ min: 0 }).withMessage('Valor acumulado não pode ser negativo.'),
     body('targetDate').optional({ values: 'null' }).isISO8601().withMessage('Data da meta inválida.'),
   ],
-  (req, res) => {
+  async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendError(res, 400, 'Dados inválidos.', errors.array());
     }
 
     const { name, targetAmount, currentAmount, targetDate } = req.body;
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO goals (user_id, name, target_amount, current_amount, target_date) VALUES (?, ?, ?, ?, ?)'
     ).run(req.user.id, name.trim(), Number(targetAmount), Number(currentAmount), targetDate || null);
 
-    const goal = db.prepare('SELECT * FROM goals WHERE id = ?').get(result.lastInsertRowid);
+    const goal = await db.prepare('SELECT * FROM goals WHERE id = ?').get(result.lastInsertRowid);
     return sendSuccess(res, 201, { ...goal, progress: goal.target_amount > 0 ? Math.min((goal.current_amount / goal.target_amount) * 100, 100) : 0 }, 'Meta criada com sucesso.');
   }
 );
@@ -47,34 +47,34 @@ router.put(
     body('currentAmount').isFloat({ min: 0 }).withMessage('Valor acumulado não pode ser negativo.'),
     body('targetDate').optional({ values: 'null' }).isISO8601().withMessage('Data da meta inválida.'),
   ],
-  (req, res) => {
+  async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendError(res, 400, 'Dados inválidos.', errors.array());
     }
 
-    const goal = db.prepare('SELECT * FROM goals WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+    const goal = await db.prepare('SELECT * FROM goals WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
     if (!goal) {
       return sendError(res, 404, 'Meta não encontrada.');
     }
 
     const { name, targetAmount, currentAmount, targetDate } = req.body;
-    db.prepare(
+    await db.prepare(
       'UPDATE goals SET name = ?, target_amount = ?, current_amount = ?, target_date = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?'
     ).run(name.trim(), Number(targetAmount), Number(currentAmount), targetDate || null, req.params.id, req.user.id);
 
-    const updated = db.prepare('SELECT * FROM goals WHERE id = ?').get(req.params.id);
+    const updated = await db.prepare('SELECT * FROM goals WHERE id = ?').get(req.params.id);
     return sendSuccess(res, 200, { ...updated, progress: updated.target_amount > 0 ? Math.min((updated.current_amount / updated.target_amount) * 100, 100) : 0 }, 'Meta atualizada com sucesso.');
   }
 );
 
-router.delete('/:id', (req, res) => {
-  const goal = db.prepare('SELECT * FROM goals WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+router.delete('/:id', async (req, res) => {
+  const goal = await db.prepare('SELECT * FROM goals WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
   if (!goal) {
     return sendError(res, 404, 'Meta não encontrada.');
   }
 
-  db.prepare('DELETE FROM goals WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
+  await db.prepare('DELETE FROM goals WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
   return sendSuccess(res, 200, { id: Number(req.params.id) }, 'Meta excluída com sucesso.');
 });
 

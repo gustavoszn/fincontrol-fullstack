@@ -6,19 +6,19 @@ const { sendSuccess } = require('../utils/response');
 const router = express.Router();
 router.use(authMiddleware);
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const currentMonth = new Date().toISOString().slice(0, 7);
 
-  const summary = db.prepare(`
+  const summary = await db.prepare(`
     SELECT
-      COALESCE(SUM(CASE WHEN type='income' THEN amount ELSE 0 END), 0) AS totalIncome,
-      COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END), 0) AS totalExpense,
+      COALESCE(SUM(CASE WHEN type='income' THEN amount ELSE 0 END), 0) AS "totalIncome",
+      COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END), 0) AS "totalExpense",
       COALESCE(SUM(CASE WHEN type='income' THEN amount ELSE 0 END), 0) - COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END), 0) AS balance
     FROM transactions
     WHERE user_id = ? AND substr(date, 1, 7) = ?
   `).get(req.user.id, currentMonth);
 
-  const categoryBreakdown = db.prepare(`
+  const categoryBreakdown = await db.prepare(`
     SELECT c.name, SUM(t.amount) AS total
     FROM transactions t
     LEFT JOIN categories c ON c.id = t.category_id
@@ -27,7 +27,7 @@ router.get('/', (req, res) => {
     ORDER BY total DESC
   `).all(req.user.id, currentMonth);
 
-  const monthlyEvolution = db.prepare(`
+  const monthlyEvolution = await db.prepare(`
     SELECT substr(date, 1, 7) as month, SUM(CASE WHEN type='income' THEN amount ELSE 0 END) as income, SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) as expense
     FROM transactions
     WHERE user_id = ?
@@ -36,7 +36,7 @@ router.get('/', (req, res) => {
     LIMIT 12
   `).all(req.user.id);
 
-  const lastTransactions = db.prepare(`
+  const lastTransactions = await db.prepare(`
     SELECT t.*, c.name as category_name
     FROM transactions t
     LEFT JOIN categories c ON c.id = t.category_id
@@ -45,7 +45,7 @@ router.get('/', (req, res) => {
     LIMIT 6
   `).all(req.user.id);
 
-  const goals = db.prepare('SELECT * FROM goals WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
+  const goals = await db.prepare('SELECT * FROM goals WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
 
   const payload = {
     summary: {

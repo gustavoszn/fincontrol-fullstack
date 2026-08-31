@@ -6,5 +6,8 @@ frontend/.env
 dist/
 data/
 .vercel/
+.env*.local
 .DS_Store
 npm-debug.log*
+.vercel
+.env*

@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config/env');
 const { db } = require('../config/db');
 
-function authMiddleware(req, res, next) {
+async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -13,7 +13,7 @@ function authMiddleware(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(decoded.id);
+    const user = await db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(decoded.id);
 
     if (!user) {
       return res.status(401).json({ success: false, message: 'Usuário não encontrado.' });
