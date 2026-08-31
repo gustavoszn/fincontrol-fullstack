@@ -1,33 +1,13 @@
 import { NavLink } from 'react-router-dom';
+import { CalendarDays, CircleUserRound, Home, Leaf, LogOut, Plus, Target } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+const links = [{ to: '/', label: 'Hoje', icon: Home }, { to: '/transactions', label: 'Calendário', icon: CalendarDays }, { to: '/goals', label: 'Objetivos', icon: Target }];
 export default function Layout({ children }) {
   const { logout, user } = useAuth();
-
-  return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-mark">F</div>
-          <span>FinControl</span>
-        </div>
-
-        <nav className="nav">
-          <NavLink className="nav-link" to="/">Dashboard</NavLink>
-          <NavLink className="nav-link" to="/transactions">Transações</NavLink>
-          <NavLink className="nav-link" to="/goals">Metas</NavLink>
-        </nav>
-
-        <div className="card" style={{ padding: '16px', marginTop: 'auto' }}>
-          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Conectado</div>
-          <div style={{ marginTop: '8px', fontWeight: 700 }}>{user?.name}</div>
-          <button className="btn btn-secondary" style={{ width: '100%', marginTop: '14px' }} onClick={logout}>Sair</button>
-        </div>
-      </aside>
-
-      <main className="content">
-        <div className="container">{children}</div>
-      </main>
-    </div>
-  );
+  return <div className="routine-shell">
+    <header className="routine-header"><div className="routine-header-inner"><NavLink className="routine-brand" to="/"><span className="routine-logo"><Leaf /></span><span>routine</span></NavLink><nav className="routine-nav">{links.map(({to,label})=><NavLink key={to} to={to}>{label}</NavLink>)}</nav><div className="routine-profile"><span className="routine-greeting">Olá, <strong>{user?.name?.split(' ')[0]}</strong></span><button type="button" onClick={logout} aria-label="Sair" data-tooltip="Sair"><LogOut size={17}/></button></div></div></header>
+    <main className="routine-content"><div className="routine-container route-enter">{children}</div></main>
+    <nav className="bottom-nav" aria-label="Navegação mobile">{links.slice(0,2).map(({to,label,icon:Icon})=><NavLink key={to} to={to}><Icon/><span>{label}</span></NavLink>)}<NavLink className="bottom-add" to="/transactions" aria-label="Nova atividade"><Plus/></NavLink><NavLink to="/goals"><Target/><span>Objetivos</span></NavLink><button type="button" onClick={logout}><CircleUserRound/><span>Perfil</span></button></nav>
+  </div>;
 }

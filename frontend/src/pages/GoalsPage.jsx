@@ -42,7 +42,7 @@ export default function GoalsPage() {
   }
 
   async function handleDelete(id) {
-    if (!window.confirm('Deseja excluir esta meta?')) return;
+    if (!window.confirm('Deseja excluir este objetivo?')) return;
     try {
       await apiRequest(`/goals/${id}`, { method: 'DELETE' });
       loadGoals();
@@ -69,8 +69,8 @@ export default function GoalsPage() {
     <>
       <div className="page-header">
         <div>
-          <p className="muted" style={{ margin: 0 }}>Planejamento financeiro</p>
-          <h1 className="page-title">Metas</h1>
+          <p className="muted" style={{ margin: 0 }}>Pequenos passos, grandes mudanças</p>
+          <h1 className="page-title">Objetivos</h1>
         </div>
       </div>
 
@@ -84,11 +84,11 @@ export default function GoalsPage() {
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             </label>
             <label className="field">
-              <span>Valor da meta</span>
+              <span>Total de etapas</span>
               <input type="number" min="0" step="0.01" value={form.targetAmount} onChange={(e) => setForm({ ...form, targetAmount: e.target.value })} required />
             </label>
             <label className="field">
-              <span>Valor acumulado</span>
+              <span>Etapas concluídas</span>
               <input type="number" min="0" step="0.01" value={form.currentAmount} onChange={(e) => setForm({ ...form, currentAmount: e.target.value })} required />
             </label>
             <label className="field">
@@ -97,7 +97,7 @@ export default function GoalsPage() {
             </label>
           </div>
           <div style={{ display: 'flex', gap: '12px', marginTop: '16px', flexWrap: 'wrap' }}>
-            <button className="btn btn-primary" type="submit">{editingId ? 'Salvar meta' : 'Adicionar meta'}</button>
+            <button className="btn btn-primary" type="submit">{editingId ? 'Salvar objetivo' : 'Adicionar objetivo'}</button>
             {editingId && <button className="btn btn-secondary" type="button" onClick={() => { setEditingId(null); setForm(emptyForm); }}>Cancelar</button>}
           </div>
         </form>
@@ -113,8 +113,7 @@ export default function GoalsPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
                   <div>
                     <h3 style={{ margin: '0 0 8px' }}>{goal.name}</h3>
-                    <div className="muted">Meta: R$ {Number(goal.target_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-                    <div className="muted">Acumulado: R$ {Number(goal.current_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                    <div className="muted">{Number(goal.current_amount)} de {Number(goal.target_amount)} etapas concluídas</div>
                   </div>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <button className="btn btn-secondary" type="button" onClick={() => startEdit(goal)}>Editar</button>

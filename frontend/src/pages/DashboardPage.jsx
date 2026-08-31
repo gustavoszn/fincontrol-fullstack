@@ -1,156 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart, Bar, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, LineChart, Line } from 'recharts';
+import { ArrowRight, CalendarDays, Check, ChevronRight, Clock3, Plus, Sparkles, Target } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import apiRequest from '../services/api';
 
-const COLORS = ['#2563eb', '#16a34a', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6'];
-
-export default function DashboardPage() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const payload = await apiRequest('/dashboard');
-        setData(payload.data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
-  }, []);
-
-  const pieData = useMemo(() => (data?.categoryBreakdown || []).map((item) => ({ name: item.name, value: Number(item.total || 0) })), [data]);
-
-  if (loading) {
-    return <div className="card section-card">Carregando dashboard...</div>;
-  }
-
-  if (error) {
-    return <div className="error-banner">{error}</div>;
-  }
-
-  const summary = data?.summary || { currentBalance: 0, monthlyIncome: 0, monthlyExpense: 0, monthlySavings: 0 };
-  const chartData = (data?.monthlyEvolution || []).map((item) => ({
-    month: item.month?.slice(5) || item.month,
-    income: Number(item.income || 0),
-    expense: Number(item.expense || 0),
-  }));
-
-  return (
-    <>
-      <div className="page-header">
-        <div>
-          <p className="muted" style={{ margin: 0 }}>Visão geral</p>
-          <h1 className="page-title">Dashboard</h1>
-        </div>
-      </div>
-
-      <div className="summary-grid">
-        <div className="card summary-card">
-          <div className="summary-label">Saldo atual</div>
-          <div className="summary-value">R$ {summary.currentBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-          <div className="summary-trend">+17.4% vs. mês anterior</div>
-        </div>
-        <div className="card summary-card">
-          <div className="summary-label">Receitas do mês</div>
-          <div className="summary-value">R$ {summary.monthlyIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-          <div className="summary-trend">Fluxo positivo</div>
-        </div>
-        <div className="card summary-card">
-          <div className="summary-label">Despesas do mês</div>
-          <div className="summary-value">R$ {summary.monthlyExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-          <div className="summary-trend">Controle de gastos</div>
-        </div>
-        <div className="card summary-card">
-          <div className="summary-label">Economia do mês</div>
-          <div className="summary-value">R$ {summary.monthlySavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-          <div className="summary-trend">Meta dentro do esperado</div>
-        </div>
-      </div>
-
-      <div className="chart-grid">
-        <div className="card chart-panel">
-          <h3>Receitas x despesas</h3>
-          <div style={{ width: '100%', height: 260 }}>
-            <ResponsiveContainer>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="income" fill="#16a34a" radius={[8, 8, 0, 0]} />
-                <Bar dataKey="expense" fill="#ef4444" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="card chart-panel">
-          <h3>Gastos por categoria</h3>
-          <div style={{ width: '100%', height: 260 }}>
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={3}>
-                  {pieData.map((entry, index) => (
-                    <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      <div className="chart-grid">
-        <div className="card chart-panel">
-          <h3>Evolução financeira</h3>
-          <div style={{ width: '100%', height: 260 }}>
-            <ResponsiveContainer>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="income" stroke="#16a34a" strokeWidth={3} />
-                <Line type="monotone" dataKey="expense" stroke="#ef4444" strokeWidth={3} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="card chart-panel">
-          <h3>Últimas transações</h3>
-          <div className="table-wrap">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Descrição</th>
-                  <th>Tipo</th>
-                  <th>Valor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data?.lastTransactions || []).map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.description}</td>
-                    <td><span className={`badge ${item.type === 'income' ? 'income' : 'expense'}`}>{item.type === 'income' ? 'Receita' : 'Despesa'}</span></td>
-                    <td>R$ {Number(item.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </>
-  );
+const dayNames=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+const monthNames=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+function timeFor(index){return `${String(8+index*2).padStart(2,'0')}:${index%2?'30':'00'}`}
+export default function DashboardPage(){
+ const {user}=useAuth(); const [activities,setActivities]=useState([]); const [goals,setGoals]=useState([]); const [loading,setLoading]=useState(true); const [error,setError]=useState(''); const [checked,setChecked]=useState({});
+ const today=useMemo(()=>new Date(),[]);
+ useEffect(()=>{Promise.all([apiRequest('/transactions'),apiRequest('/goals')]).then(([a,g])=>{setActivities((a.data||[]).slice(0,7));setGoals(g.data||[])}).catch(e=>setError(e.message)).finally(()=>setLoading(false))},[]);
+ if(loading)return <div className="routine-skeleton"><div/><div/><div/><div/></div>;
+ return <>
+  <section className="today-heading"><div className="date-orb"><strong>{today.getDate()}</strong><span>{monthNames[today.getMonth()].slice(0,3)}</span></div><div><span className="day-name">{dayNames[today.getDay()]}</span><h1>Seu dia, do seu jeito.</h1><p>Boa {today.getHours()<12?'manhã':today.getHours()<18?'tarde':'noite'}, {user?.name?.split(' ')[0]}. Um passo de cada vez.</p></div><Link className="routine-primary" to="/transactions"><Plus/> Nova atividade</Link></section>
+  {error&&<div className="routine-feedback">{error}</div>}
+  <div className="today-grid"><section className="timeline-section"><div className="soft-heading"><div><span>Hoje</span><h2>Sua timeline</h2></div><Link to="/transactions"><CalendarDays/> Ver calendário</Link></div>
+   <div className="timeline">{activities.length===0?<div className="routine-empty"><Sparkles/><strong>Seu dia está livre</strong><span>Adicione uma atividade e comece a construir sua rotina.</span><Link to="/transactions">Planejar meu dia <ArrowRight/></Link></div>:activities.map((item,index)=><article className={`timeline-item ${checked[item.id]?'is-done':''}`} key={item.id} style={{'--delay':`${index*55}ms`}}><time>{timeFor(index)}</time><span className="timeline-line"><i/></span><button className="check-button" onClick={()=>setChecked({...checked,[item.id]:!checked[item.id]})} aria-label="Marcar como concluída">{checked[item.id]&&<Check/>}</button><div className="timeline-card"><span className={`activity-color color-${index%4}`}/><div><strong>{item.description}</strong><span>{item.category_name||'Pessoal'} · {Math.round(Number(item.amount))} min</span></div><ChevronRight/></div></article>)}</div>
+  </section><aside className="day-aside"><section className="calm-card intention-card"><span className="mini-icon"><Sparkles/></span><span>Intenção do dia</span><blockquote>“Faça menos, com mais presença.”</blockquote></section><section className="calm-card"><div className="aside-heading"><span>Objetivos em foco</span><Link to="/goals">Ver todos</Link></div>{goals.slice(0,3).map(goal=><Link className="focus-goal" to="/goals" key={goal.id}><span className="goal-ring" style={{'--progress':`${Math.min(goal.progress||0,100)*3.6}deg`}}><i>{Math.round(goal.progress||0)}%</i></span><div><strong>{goal.name}</strong><span>{goal.target_date?`até ${new Date(goal.target_date).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})}`:'sem prazo'}</span></div><ChevronRight/></Link>)}{goals.length===0&&<div className="aside-empty"><Target/><span>Defina algo que importa para você.</span></div>}</section><section className="week-glance"><div><Clock3/><span>Ritmo da semana</span></div><strong>{activities.length} atividades</strong><small>Consistência é melhor que intensidade.</small></section></aside></div>
+ </>;
 }

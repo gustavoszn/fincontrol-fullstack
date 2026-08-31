@@ -57,7 +57,7 @@ export default function TransactionsPage() {
   }
 
   async function handleDelete(id) {
-    if (!window.confirm('Deseja excluir esta transação?')) return;
+    if (!window.confirm('Deseja excluir esta atividade?')) return;
     try {
       await apiRequest(`/transactions/${id}`, { method: 'DELETE' });
       loadData();
@@ -88,8 +88,8 @@ export default function TransactionsPage() {
     <>
       <div className="page-header">
         <div>
-          <p className="muted" style={{ margin: 0 }}>Controle financeiro</p>
-          <h1 className="page-title">Transações</h1>
+          <p className="muted" style={{ margin: 0 }}>Planeje seu tempo com leveza</p>
+          <h1 className="page-title">Calendário e atividades</h1>
         </div>
       </div>
 
@@ -103,14 +103,14 @@ export default function TransactionsPage() {
               <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
             </label>
             <label className="field">
-              <span>Valor</span>
+              <span>Duração (minutos)</span>
               <input type="number" min="0.01" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
             </label>
             <label className="field">
               <span>Tipo</span>
               <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-                <option value="expense">Despesa</option>
-                <option value="income">Receita</option>
+                <option value="expense">Atividade</option>
+                <option value="income">Compromisso</option>
               </select>
             </label>
             <label className="field">
@@ -132,7 +132,7 @@ export default function TransactionsPage() {
             <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </label>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <button className="btn btn-primary" type="submit">{editingId ? 'Salvar alterações' : 'Adicionar transação'}</button>
+            <button className="btn btn-primary" type="submit">{editingId ? 'Salvar atividade' : 'Adicionar atividade'}</button>
             {editingId && <button className="btn btn-secondary" type="button" onClick={() => { setEditingId(null); setForm(emptyForm); }}>Cancelar</button>}
           </div>
         </form>
@@ -147,8 +147,8 @@ export default function TransactionsPage() {
           <input placeholder="Pesquisar..." value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
           <select value={filters.type} onChange={(e) => setFilters({ ...filters, type: e.target.value })}>
             <option value="">Tipo</option>
-            <option value="income">Receita</option>
-            <option value="expense">Despesa</option>
+            <option value="income">Compromisso</option>
+            <option value="expense">Atividade</option>
           </select>
           <select value={filters.categoryId} onChange={(e) => setFilters({ ...filters, categoryId: e.target.value })}>
             <option value="">Categoria</option>
@@ -171,7 +171,7 @@ export default function TransactionsPage() {
                 <th>Descrição</th>
                 <th>Categoria</th>
                 <th>Tipo</th>
-                <th>Valor</th>
+                <th>Duração</th>
                 <th>Data</th>
                 <th>Ações</th>
               </tr>
@@ -186,8 +186,8 @@ export default function TransactionsPage() {
                   <tr key={transaction.id}>
                     <td>{transaction.description}</td>
                     <td>{transaction.category_name || 'Sem categoria'}</td>
-                    <td><span className={`badge ${transaction.type === 'income' ? 'income' : 'expense'}`}>{transaction.type === 'income' ? 'Receita' : 'Despesa'}</span></td>
-                    <td>R$ {Number(transaction.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td><span className={`badge ${transaction.type === 'income' ? 'income' : 'expense'}`}>{transaction.type === 'income' ? 'Compromisso' : 'Atividade'}</span></td>
+                    <td>{Math.round(Number(transaction.amount))} min</td>
                     <td>{new Date(transaction.date).toLocaleDateString('pt-BR')}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>

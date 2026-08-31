@@ -73,7 +73,7 @@ const db = {
 };
 
 async function ensureUserDefaultCategories(userId) {
-  const names = ['Salário', 'Freelance', 'Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Educação', 'Entretenimento', 'Outros'];
+  const names = ['Pessoal', 'Trabalho', 'Estudos', 'Saúde', 'Bem-estar', 'Exercício', 'Família', 'Lazer', 'Outros'];
   await ensureSchema();
   for (const name of names) {
     await pool.query('INSERT INTO categories (user_id, name) VALUES ($1, $2) ON CONFLICT (user_id, name) DO NOTHING', [userId, name]);
